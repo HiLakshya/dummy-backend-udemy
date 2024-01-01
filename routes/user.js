@@ -3,6 +3,7 @@ const { User, Course } = require("../db/index");
 const router = Router();
 const userMiddleware = require("../middleware/user");
 const zod = require("zod");
+const jwt = require("jsonwebtoken");
 
 //Validation Schemas
 const passwordSchema = zod.string().min(6);
@@ -13,7 +14,7 @@ router.post('/signup', async (req, res) => {
     // Implement user signup logic
     const username = req.headers.username;
     const password = req.headers.password;
-
+    
     if(emailSchema.safeParse(username).success && passwordSchema.safeParse(password).success){
         try {
             await User.create({
@@ -31,9 +32,28 @@ router.post('/signup', async (req, res) => {
         console.log("Invalid");
         res.status(400).send("Invalid username or password");
     }
+});
 
+router.post('/signin', async function (req, res) {
+    let username = req.headers.username;
+    let password = req.headers.password;
+    const SECRET = process.env.JWT_SECRET;
     
-    
+    // Implement admin signin logic
+    const ifUserExists = await User.findOne({
+
+        username: username,
+        password: password
+    });
+
+    if (ifUserExists) {
+        const token = jwt.sign({ username: username }, SECRET);
+        res.status(200).json({ token: token });
+    } else {
+        res.status(401).send('Unauthorized User');
+    }
+
+
 });
 
 router.get('/courses', async (req, res) => {
