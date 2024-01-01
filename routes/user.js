@@ -2,6 +2,11 @@ const { Router } = require("express");
 const { User, Course } = require("../db/index");
 const router = Router();
 const userMiddleware = require("../middleware/user");
+const zod = require("zod");
+
+//Validation Schemas
+const passwordSchema = zod.string().min(6);
+const emailSchema = zod.string().email();
 
 // User Routes
 router.post('/signup', async (req, res) => {
@@ -9,18 +14,26 @@ router.post('/signup', async (req, res) => {
     const username = req.headers.username;
     const password = req.headers.password;
 
-    
-    try {
-        await User.create({
-            username: username,
-            password: password
-        });
-        res.status(201).json({ message: 'User created successfully' });
-        
-    } catch (error) {
-        console.log(error);
-        res.status(400).send(error);    
+    if(emailSchema.safeParse(username).success && passwordSchema.safeParse(password).success){
+        try {
+            await User.create({
+                username: username,
+                password: password
+            });
+            res.status(201).json({ message: 'User created successfully' });
+            
+        } catch (error) {
+            console.log(error);
+            res.status(400).send(error);    
+        }
     }
+    else{
+        console.log("Invalid");
+        res.status(400).send("Invalid username or password");
+    }
+
+    
+    
 });
 
 router.get('/courses', async (req, res) => {
