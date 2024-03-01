@@ -9,7 +9,7 @@ const SECRET = process.env.JWT_SECRET;
 
 //Validation Schemas
 const passwordSchema = zod.string().min(6);
-const emailSchema = zod.string().email();
+const emailSchema = zod.string().min(6);
 
 // Admin Routes
 router.post('/signup', async function (req, res) {

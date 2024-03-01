@@ -7,7 +7,13 @@ const jwt = require("jsonwebtoken");
 
 //Validation Schemas
 const passwordSchema = zod.string().min(6);
-const emailSchema = zod.string().email();
+const emailSchema = zod.string().min(6);
+
+router.get('/status', (req, res) => {
+    res.json({
+        status: "User API is working"
+    });
+});
 
 // User Routes
 router.post('/signup', async (req, res) => {
@@ -62,23 +68,37 @@ router.get('/courses', async (req, res) => {
     res.json(courses);
 });
 
-router.post('/courses/:courseId', userMiddleware, async (req, res) => {
-    // Implement course purchase logic
-    const courseId = req.params.courseId;
-    const username = req.headers.username;
+router.post('/courses', userMiddleware, async (req, res) => {
+    try {
+        // Implement course purchase logic
+        const courseId = req.headers.courseid;
+        const username = req.headers.username;
 
-    await User.updateOne({
-        username: username
-    }, {
-        "$push": {
-            purchasedCourses: courseId
+        if (!courseId) {
+            return res.status(400).json({ error: 'Course ID is required in the request body' });
         }
-    })
-    res.json({
-        message: "Purchase complete!"
-    })
 
+        const user = await User.findOne({ username });
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Update the user's purchasedCourses
+        await User.updateOne(
+            { username },
+            { "$push": { purchasedCourses: courseId } }
+        );
+
+        res.json({
+            message: 'Purchase complete!',
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 });
+
 
 router.get('/purchasedCourses', userMiddleware, async (req, res) => {
     // Implement fetching purchased courses logic
